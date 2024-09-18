@@ -9,7 +9,27 @@ class TCPServer {
     public static void main(String argv[]) throws Exception {
         ServerSocket welcomeSocket = new ServerSocket(9090);
 
+        // Cria um BufferedReader para ler a entrada do terminal do servidor
+        BufferedReader servidorEntrada = new BufferedReader(new InputStreamReader(System.in));
+
         System.out.println("Servidor no ar");
+
+        // Thread para ler e enviar mensagens do console do servidor
+        new Thread(() -> {
+            String msgServidor;
+            try {
+                while ((msgServidor = servidorEntrada.readLine()) != null) {
+                    synchronized (clientWriters) {
+                        for (PrintWriter writer : clientWriters) {
+                            writer.println("Servidor: " + msgServidor);
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
         while (true) {
             // Aceita uma nova conexão de cliente
             Socket connectionSocket = welcomeSocket.accept();
@@ -41,11 +61,11 @@ class TCPServer {
 
                 String msgCliente;
                 while ((msgCliente = socketEntradaCliente.readLine()) != null) {
-                    System.out.println("Cliente disse: " + msgCliente);
+                    System.out.println("Cliente" + msgCliente);
                     // Retransmite a mensagem para todos os clientes conectados
                     synchronized (clientWriters) {
                         for (PrintWriter writer : clientWriters) {
-                            writer.println("Cliente: " + msgCliente);
+                            writer.println("Cliente" + msgCliente);
                         }
                     }
                 }
@@ -60,7 +80,7 @@ class TCPServer {
                 synchronized (clientWriters) {
                     clientWriters.remove(socketSaidaCliente);
                 }
-                System.out.println("Cliente desconectado");
+                System.out.println("#######Cliente desconectado#######");
             }
         }
     }
